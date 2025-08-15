@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -15,12 +18,27 @@ type Users struct {
 }
 
 func main() {
-	dsn := "host=postgres.orbstack-pg.orb.local user=admin password=di1mon11421 dbname=gorm_learning port=5432"
+
+	//содержимое .env:
+	//DATABASE_URL="host=postgres.orbstack-pg.orb.local user=admin password=di1mon11421 dbname=gorm_learning port=5432"
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		panic("DATABASE_URL environment variable is not set")
+	}
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	fmt.Println("All fine", db, err)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Connected to base")
 	ctx := context.Background()
 	db.AutoMigrate(&Users{})
 
-	err = gorm.G[Users](db).Create(ctx, &Users{Name: "second", Email: "asd@asd.ru"})
-	_ = err
+	err = gorm.G[Users](db).Create(ctx, &Users{Name: "no admin", Email: "asd@asd.ru"})
+	_, _ = db, err
 }
