@@ -40,5 +40,6 @@ func main() {
 	db.AutoMigrate(&Users{})
 
 	err = gorm.G[Users](db).Create(ctx, &Users{Name: "no admin", Email: "asd@asd.ru"})
-	_, _ = db, err
+	_ = err
+
 }
