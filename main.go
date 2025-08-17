@@ -50,4 +50,42 @@ func main() {
 	//err = gorm.G[Users](db).Create(ctx, &Users{Name: "no admin", Email: "asd@asd.ru"})
 	_ = err
 
+	if err = CreatePosts(db); err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("работа продолжена")
+
+}
+
+func CreatePosts(db *gorm.DB) error {
+	tx := db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+			log.Printf("Recovered from panic: %v", r)
+		}
+	}()
+	if err := tx.Error; err != nil {
+		return err
+	}
+
+	user := Users{
+		Name:  "Dima",
+		Email: "asdd@as1dd",
+		Posts: []Post{
+			{Title: "пост номер 1",
+				Content: "содержимое поста"},
+			{Title: "пост номер 2",
+				Content: "содержимое поста"},
+		},
+	}
+
+	if err := tx.Create(&user).Error; err != nil {
+		tx.Rollback()
+		return err
+
+	}
+	log.Println("Транзакция успешна")
+	return tx.Commit().Error
 }
