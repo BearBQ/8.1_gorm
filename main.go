@@ -50,6 +50,7 @@ func main() {
 	//err = gorm.G[Users](db).Create(ctx, &Users{Name: "no admin", Email: "asd@asd.ru"})
 	_ = err
 
+
 	newPosts := []Post{
 		{Title: "1",
 			Content: "123123",
