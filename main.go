@@ -50,42 +50,80 @@ func main() {
 	//err = gorm.G[Users](db).Create(ctx, &Users{Name: "no admin", Email: "asd@asd.ru"})
 	_ = err
 
-	if err = CreatePosts(db); err != nil {
-		fmt.Println(err)
+
+	newPosts := []Post{
+		{Title: "1",
+			Content: "123123",
+			UserID:  1,
+		},
+		{Title: "2",
+			Content: "2222222",
+			UserID:  1},
+	}
+	for _, post := range newPosts {
+		err = AddPost(db, post)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 
-	fmt.Println("работа продолжена")
+	resultUser, err := GetUser(db, 2) //Получаем запись по номеру ID
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Println(resultUser)
 
+	resultUser, err = GetUserWithEmail(db, "asd@asd.ru")
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Println(resultUser)
+
+	resultUser, err = GetUsersWithPosts(db, 1)
+	if err != nil {
+		log.Println(err)
+	}
+
+	for _, post := range resultUser.Posts {
+		fmt.Println(post.Title, post.Content)
+	}
+
+	err = DeleteUserAndPosts(db, 1)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
-func CreatePosts(db *gorm.DB) error {
-	tx := db.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-			log.Printf("Recovered from panic: %v", r)
-		}
-	}()
-	if err := tx.Error; err != nil {
-		return err
-	}
+func AddPost(db *gorm.DB, post Post) error {
 
-	user := Users{
-		Name:  "Dima",
-		Email: "asdd@as1dd",
-		Posts: []Post{
-			{Title: "пост номер 1",
-				Content: "содержимое поста"},
-			{Title: "пост номер 2",
-				Content: "содержимое поста"},
-		},
-	}
+	result := db.Create(&post)
+	return result.Error
+}
 
-	if err := tx.Create(&user).Error; err != nil {
-		tx.Rollback()
-		return err
+func GetUser(db *gorm.DB, id uint) (Users, error) {
+	var user Users
+	result := db.First(&user, id)
+	return user, result.Error
+}
 
-	}
-	log.Println("Транзакция успешна")
-	return tx.Commit().Error
+func GetUserWithEmail(db *gorm.DB, email string) (Users, error) {
+	var user Users
+	result := db.Where("Email=?", email).First(&user)
+	return user, result.Error
+}
+
+func GetUsersWithPosts(db *gorm.DB, id uint) (Users, error) { //выборка пользователя с постами
+	var user Users
+	result := db.Preload("Posts").First(&user, id)
+	return user, result.Error
+}
+
+func GetAllUsersWithPosts(db *gorm.DB) (Users, error) { //выборка пользователя с постами
+	var user Users
+	result := db.Preload("Posts").Find(&user)
+	return user, result.Error
+}
+
+func DeleteUserAndPosts(db *gorm.DB, id uint) error {
+	return db.Select("Posts").Delete(&Users{}, id).Error
 }
